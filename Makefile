@@ -6,6 +6,10 @@ install:
 test:
 	uv run pytest -x tests
 
+.PHONY: e2e
+e2e:
+	uv run pytest -v tests/test_e2e.py
+
 .PHONY: lint
 lint:
 	uv run ruff check src/proper_sentry tests

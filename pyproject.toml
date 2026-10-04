@@ -22,7 +22,7 @@ classifiers = [
 ]
 requires-python = ">=3.14"
 dependencies = [
-    "proper",
+    "proper>=0.34",
     "sentry-sdk>=2.40,<3",
 ]
 

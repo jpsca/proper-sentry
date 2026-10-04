@@ -53,3 +53,22 @@ instrument(app, transaction_style="url", trace_sql=False)
 
 - WebSocket channels.
 - Sentry's span streaming mode (`trace_lifecycle="stream"`): errors are still reported, but no transactions are sent.
+
+## Development
+
+```bash
+make install
+make test
+make lint
+```
+
+`tests/test_e2e.py` sends real events to a Sentry project and reads them back through the Sentry API. It's skipped unless these environment variables are set:
+
+```bash
+export SENTRY_DSN=...         # DSN of a project used only for tests
+export SENTRY_AUTH_TOKEN=...  # a token with event:read and project:read
+export SENTRY_ORG=...         # the organization slug
+make e2e
+```
+
+It takes a minute or two, while Sentry indexes the events.

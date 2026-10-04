@@ -411,8 +411,8 @@ wheels = [
 
 [[package]]
 name = "proper"
-version = "0.33.0"
-source = { editable = "../proper" }
+version = "0.34.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "babel" },
     { name = "formidable" },
@@ -435,52 +435,9 @@ dependencies = [
     { name = "types-peewee" },
     { name = "tzdata" },
 ]
-
-[package.metadata]
-requires-dist = [
-    { name = "babel", specifier = ">=2.17.0" },
-    { name = "formidable", specifier = ">=0.21" },
-    { name = "granian", extras = ["reload"], specifier = ">=2.8.3" },
-    { name = "hecto", specifier = ">=2.4.0" },
-    { name = "huey", specifier = ">=3.4,<4" },
-    { name = "inflection", specifier = ">=0.5.1" },
-    { name = "isort", specifier = "~=5.0" },
-    { name = "itsdangerous", specifier = ">=2.2" },
-    { name = "jinja2", specifier = ">=3.0" },
-    { name = "markupsafe", specifier = ">=2.0" },
-    { name = "minijx", specifier = ">=0.1.0" },
-    { name = "passlib", specifier = "~=1.7" },
-    { name = "peewee", specifier = ">=4.5.1,<5" },
-    { name = "peewee-migrate", specifier = ">=2.3,<3" },
-    { name = "proper-cli", specifier = ">=2.1.0" },
-    { name = "python-dateutil", specifier = "~=2.9.0" },
-    { name = "python-multipart", specifier = ">=0.0.22" },
-    { name = "traceback-with-variables", specifier = "~=2.0.4" },
-    { name = "types-peewee", specifier = ">=4.5.1" },
-    { name = "tzdata", specifier = ">=2025.3" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "ipdb", specifier = ">=0.13" },
-    { name = "pre-commit" },
-    { name = "pytest-asyncio", specifier = ">=1.3.0" },
-    { name = "ruff", specifier = ">=0.2.0" },
-    { name = "tox-uv", specifier = ">=1.33.1" },
-    { name = "ty", specifier = ">=0.0.1a24" },
-]
-docs = [{ name = "writeadoc", specifier = ">=0.28.0" }]
-test = [
-    { name = "boto3", specifier = ">=1.35.71" },
-    { name = "nh3", specifier = ">=0.2.18" },
-    { name = "poyo" },
-    { name = "proper-new" },
-    { name = "pytest", specifier = ">=7.2" },
-    { name = "pytest-cov" },
-    { name = "pytest-smtpd" },
-    { name = "pyvips", specifier = ">=2.0.0" },
-    { name = "redis", specifier = ">=7.0.0" },
-    { name = "smtpdfix" },
+sdist = { url = "https://files.pythonhosted.org/packages/0d/47/896f89ffb366dbeb2bd616bf638a0e17f8c1bb62e23ab0380d56c9af7f2c/proper-0.34.0.tar.gz", hash = "sha256:8cb86abc73ceffd176f21dd1968727a0e7ebdc5074f0ee8f61eb90d7a0905b9e", size = 502400, upload-time = "2026-10-04T02:13:39.594Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/86/a2/ee99527cfbdfa70d5073064bf3eca6957bb1d5eff9c7a9cd355149b70b84/proper-0.34.0-py3-none-any.whl", hash = "sha256:345f0983915ed61301132d8f1aa983345a6a66fe9fcffcc9452d5712375c008f", size = 567750, upload-time = "2026-10-04T02:13:38.319Z" },
 ]
 
 [[package]]
@@ -513,7 +470,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "proper", editable = "../proper" },
+    { name = "proper", specifier = ">=0.34" },
     { name = "sentry-sdk", specifier = ">=2.40,<3" },
 ]
 
