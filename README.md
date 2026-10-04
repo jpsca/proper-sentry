@@ -40,6 +40,8 @@ If you'd rather start Sentry yourself, call `sentry_sdk.init(...)` and then `ins
 
 With `"send_default_pii": True` in `SENTRY`, the reports also include the cookies, the IP address, and the `id`, `email` and `login` of `current.user`.
 
+The values of Proper's session and sign-in cookies (`_session` and `_auth`), and of any form field with "password" in its name, are never sent, whatever the data scrubbing settings of your Sentry project.
+
 ## Options
 
 ```python

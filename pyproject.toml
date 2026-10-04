@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "proper-sentry"
-version = "0.1.0"
+version = "0.1.1"
 description = "Sentry integration for Proper apps"
 authors = [
     {name = "Juan Pablo Scaletti", email = "juanpablo@jpscaletti.com"},

@@ -206,6 +206,56 @@ def test_leaves_out_bodies_that_are_too_large(app, client, sentry_init):
     assert "data" not in event["request"]
 
 
+SECRET_COOKIES = "_session=SESSIONVALUE; _auth=AUTHVALUE; theme=dark"
+SECRET_FORM = "login=ana&password=hunter2&password1=hunter3&new_Password=hunter4"
+SECRETS = (b"SESSIONVALUE", b"AUTHVALUE", b"hunter2", b"hunter3", b"hunter4")
+
+
+def post_secrets(client):
+    client.post(
+        "/submit",
+        body=SECRET_FORM,
+        headers={
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": SECRET_COOKIES,
+        },
+    )
+
+
+def test_never_sends_the_session_and_passwords(app, client, sentry_init):
+    recorder = sentry_init(send_default_pii=True, traces_sample_rate=1.0)
+    instrument(app)
+    post_secrets(client)
+
+    sent = b"".join(envelope.serialize() for envelope in recorder.envelopes)
+    for secret in SECRETS:
+        assert secret not in sent
+    (event,) = recorder.events
+    assert event["request"]["cookies"] == {
+        "_session": "[Filtered]",
+        "_auth": "[Filtered]",
+        "theme": "dark",
+    }
+    assert event["request"]["data"] == {
+        "login": "ana",
+        "password": "[Filtered]",
+        "password1": "[Filtered]",
+        "new_Password": "[Filtered]",
+    }
+
+
+def test_never_sends_passwords_without_pii(app, client, sentry_init):
+    recorder = sentry_init()
+    instrument(app)
+    post_secrets(client)
+
+    sent = b"".join(envelope.serialize() for envelope in recorder.envelopes)
+    for secret in SECRETS:
+        assert secret not in sent
+    (event,) = recorder.events
+    assert event["request"]["data"]["login"] == "ana"
+
+
 def test_reports_the_user_with_send_default_pii(app, client, sentry_init):
     recorder = sentry_init(send_default_pii=True)
     instrument(app)

@@ -17,6 +17,7 @@ import typing as t
 
 import peewee
 import sentry_sdk
+from proper.constants import AUTH_COOKIE_NAME, SESSION_COOKIE_NAME
 from proper.global_context import current
 from proper.helpers import logger
 from sentry_sdk.consts import OP, SPANDATA
@@ -30,6 +31,7 @@ from sentry_sdk.sessions import track_session
 from sentry_sdk.tracing import Span, TransactionSource
 from sentry_sdk.tracing_utils import record_sql_queries
 from sentry_sdk.utils import (
+    AnnotatedValue,
     capture_internal_exceptions,
     event_from_exception,
     transaction_from_function,
@@ -56,6 +58,10 @@ DB_ORIGIN = "auto.db.peewee"
 DEFAULT_TRANSACTION_NAME = "generic Proper request"
 
 TRANSACTION_STYLES = ("endpoint", "url")
+
+# Cookies that let whoever has them act as the user. Their values are never
+# sent, whatever the data scrubbing settings of the Sentry project.
+SECRET_COOKIES = (SESSION_COOKIE_NAME, AUTH_COOKIE_NAME)
 
 _INSTRUMENTED_ATTR = "_sentry_instrumented"
 
@@ -225,7 +231,7 @@ def _make_event_processor(request: "Request") -> "EventProcessor":
                 info["data"] = _form_data(request)
 
             if should_send_default_pii():
-                info["cookies"] = dict(request.cookies)
+                info["cookies"] = _cookies(request)
                 info["env"] = {"REMOTE_ADDR": request.remote_ip}
                 user = event.setdefault("user", {})
                 user.setdefault("ip_address", request.remote_ip)
@@ -236,17 +242,33 @@ def _make_event_processor(request: "Request") -> "EventProcessor":
     return event_processor
 
 
+def _cookies(request: "Request") -> dict[str, t.Any]:
+    return {
+        name: _filtered() if name in SECRET_COOKIES else value
+        for name, value in request.cookies.items()
+    }
+
+
 def _form_data(request: "Request") -> dict[str, t.Any]:
     """The submitted fields, one value each unless the field was sent more
-    than once. Uploaded files are listed by name only."""
+    than once. Uploaded files are listed by name only, and the value of any
+    field with "password" in its name is never sent."""
     data = {}
     for name, values in request.form.items():
+        if "password" in name.lower():
+            data[name] = _filtered()
+            continue
         values = [
             v if isinstance(v, str) else f"<file: {getattr(v, 'filename', '')}>"
             for v in values
         ]
         data[name] = values[0] if len(values) == 1 else values
     return data
+
+
+def _filtered() -> AnnotatedValue:
+    """What Sentry shows as `[Filtered]`."""
+    return AnnotatedValue.substituted_because_contains_sensitive_data()
 
 
 def _add_current_user(user: dict[str, t.Any]) -> None:
