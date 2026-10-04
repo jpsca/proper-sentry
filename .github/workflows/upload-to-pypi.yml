@@ -1,0 +1,59 @@
+name: Upload to PyPI
+
+on:
+  # Triggers the workflow when a release is created
+  release:
+    types: [released]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: validate
+    strategy:
+      matrix:
+        python: ['3.14t', '3.15.0rc2t']
+      fail-fast: false
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental || false }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # pyproject.toml installs Proper from ../proper (editable).
+      - name: "Clone Proper"
+        run: git clone --depth 1 https://github.com/jpsca/proper.git ../proper
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: "Installs dependencies"
+        run: uv sync --group test --python ${{ matrix.python }}
+
+      - name: "Lint"
+        run: make lint
+
+      - name: "Test"
+        run: make test
+
+  upload:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/proper-sentry
+    permissions:
+      # Required for PyPI Trusted Publishing
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: "Builds the package"
+        run: uv build
+
+      - name: "Uploads to PyPI"
+        run: uv publish --trusted-publishing always

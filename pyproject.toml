@@ -1,0 +1,109 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "proper-sentry"
+version = "0.1.0"
+description = "Sentry integration for Proper apps"
+authors = [
+    {name = "Juan Pablo Scaletti", email = "juanpablo@jpscaletti.com"},
+]
+license = "MIT"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
+    "Typing :: Typed",
+]
+requires-python = ">=3.14"
+dependencies = [
+    "proper",
+    "sentry-sdk>=2.40,<3",
+]
+
+[project.urls]
+homepage = "https://ProperProject.org/"
+repository = "https://github.com/jpsca/proper-sentry"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.coverage.run]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "TYPE_CHECKING",
+]
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+
+[tool.ruff]
+line-length = 90
+indent-width = 4
+target-version = "py314"
+exclude = [".*", "build", "dist"]
+include = ["*.py"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+ignore = [
+	# x is too complex
+	"C901",
+	# whitespace before ':'
+	"E203",
+	"E501",
+	# line break before binary operator
+	"W505",
+	"W605",
+]
+select = [
+	# bugbear
+	"B",
+	# mccabe, comprehensions, commas
+	"C",
+	# pycodestyle errors
+	"E",
+	# pyflakes
+	"F",
+	# logging format
+	"G",
+	# imports
+	"I",
+	# quotes
+	"Q",
+	# pycodestyle warnings
+	"W",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["proper_sentry"]
+no-lines-before = ["local-folder"]
+relative-imports-order = "furthest-to-closest"
+lines-after-imports = 2
+
+[tool.uv.sources]
+proper = { path = "../proper", editable = true }
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.10",
+    "ty>=0.0.84",
+]
+test = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+]
