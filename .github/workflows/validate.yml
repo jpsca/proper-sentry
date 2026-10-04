@@ -10,6 +10,11 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# pyproject.toml installs Proper from ../proper (editable) for local work.
+# CI ignores that and tests against the Proper published on PyPI.
+env:
+  UV_NO_SOURCES: "1"
+
 jobs:
   lint:
     name: lint
@@ -17,10 +22,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      # pyproject.toml installs Proper from ../proper (editable).
-      - name: "Clone Proper"
-        run: git clone --depth 1 https://github.com/jpsca/proper.git ../proper
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
