@@ -3,7 +3,8 @@
 Skipped unless these are set:
 
 - `SENTRY_DSN`: the DSN of a project for tests, where the events go.
-- `SENTRY_AUTH_TOKEN`: a token with `event:read`, to read them back.
+- `SENTRY_AUTH_TOKEN`: a token with `org:read` and `project:read`, to read
+  them back.
 - `SENTRY_ORG`: the slug of the organization of that project.
 - `SENTRY_API_URL` (optional): defaults to `https://sentry.io/api/0`.
 

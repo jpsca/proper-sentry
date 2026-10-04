@@ -66,7 +66,7 @@ make lint
 
 ```bash
 export SENTRY_DSN=...         # DSN of a project used only for tests
-export SENTRY_AUTH_TOKEN=...  # a token with event:read and project:read
+export SENTRY_AUTH_TOKEN=...  # a token with org:read and project:read
 export SENTRY_ORG=...         # the organization slug
 make e2e
 ```
