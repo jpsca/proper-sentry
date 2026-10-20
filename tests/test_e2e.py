@@ -12,7 +12,7 @@ Each run tags its events with a release of its own, so runs don't mix.
 Sentry takes a while to make events searchable: this waits up to three
 minutes for them.
 """
-import asyncio
+import io
 import json
 import os
 import time
@@ -22,11 +22,11 @@ import urllib.request
 import peewee as pw
 import pytest
 import sentry_sdk
-from proper import App, TestClient, current
+from bearings import Listener
+from proper import App, current
 from proper.controller import Controller
 from proper.errors import NotFound
 from proper.router import Route
-from proper.test_client import HttpProtocolStub, make_test_scope
 
 from proper_sentry import instrument
 
@@ -63,8 +63,8 @@ class PagesController(Controller):
         list(Note.select())
         raise ValueError(f"wsgi boom {RELEASE}")
 
-    def explode_rsgi(self):
-        raise RuntimeError(f"rsgi boom {RELEASE}")
+    def explode_bearings(self):
+        raise RuntimeError(f"bearings boom {RELEASE}")
 
     def missing(self):
         raise NotFound()
@@ -76,7 +76,7 @@ class PagesController(Controller):
 # ---- Sending ----
 
 
-def send_everything(compiled_path: str) -> None:
+def send_everything(compiled_path: str, make_client) -> None:
     app = App(__name__, {
         "SECRET_KEYS": ["*" * 50],
         "DEBUG": False,
@@ -91,7 +91,7 @@ def send_everything(compiled_path: str) -> None:
     })
     for path, action in (
         ("/explode", PagesController.explode),
-        ("/explode-rsgi", PagesController.explode_rsgi),
+        ("/explode-bearings", PagesController.explode_bearings),
         ("/missing", PagesController.missing),
         ("/notes", PagesController.notes),
     ):
@@ -106,22 +106,16 @@ def send_everything(compiled_path: str) -> None:
     db.create_tables([Note])
     Note.create(text="first")
 
-    client = TestClient(app)
+    client = make_client(app)
     assert client.get("/explode?x=1").status == 500
     assert client.get("/missing").status == 404
     assert client.get("/notes").body == "first"
     e2e_failing_task()
 
-    async def rsgi():
-        await app.startup()
-        try:
-            protocol = HttpProtocolStub()
-            await app.__rsgi__(make_test_scope("/explode-rsgi"), protocol)
-            return protocol.status
-        finally:
-            await app.shutdown()
-
-    assert asyncio.run(rsgi()) == 500
+    # The raw interface that `proper run` serves with Bearings
+    head = "".join(f + "\0" for f in ("GET", "/explode-bearings", "", "HTTP/1.1", "", ""))
+    status, _, _ = app._bearings(head, io.BytesIO(), Listener("example.com", 80, "http"))
+    assert status == 500
     sentry_sdk.flush(timeout=10)
     db.close()
 
@@ -156,9 +150,9 @@ def query(dataset: str, fields: list[str], extra: str = "") -> list[dict]:
 
 
 @pytest.fixture(scope="module")
-def received(tmp_path_factory):
+def received(tmp_path_factory, make_client):
     """Send everything once, then wait until Sentry has all of it."""
-    send_everything(str(tmp_path_factory.mktemp("compiled")))
+    send_everything(str(tmp_path_factory.mktemp("compiled")), make_client)
     deadline = time.monotonic() + WAIT_SECONDS
     while True:
         errors = query("errors", ["id", "title", "transaction", "error.mechanism"])
@@ -201,9 +195,9 @@ def test_wsgi_error(received):
     assert queries[0]["message"].startswith("SELECT")
 
 
-def test_rsgi_error(received):
-    error = find_error(received, "rsgi boom")
-    assert error["transaction"] == "tests.test_e2e.PagesController.explode_rsgi"
+def test_bearings_error(received):
+    error = find_error(received, "bearings boom")
+    assert error["transaction"] == "tests.test_e2e.PagesController.explode_bearings"
     assert error["error.mechanism"] == ["proper"]
 
 
@@ -220,7 +214,7 @@ def test_transactions(received):
     }
     assert statuses == {
         "explode": "internal_error",
-        "explode_rsgi": "internal_error",
+        "explode_bearings": "internal_error",
         "missing": "not_found",
         "notes": "ok",
     }

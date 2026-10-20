@@ -1,10 +1,9 @@
 """The same reports whichever way the request arrives, and from the queue."""
-import asyncio
 import io
 
+from bearings import Listener
 from proper.controller import Controller
 from proper.router import Route
-from proper.test_client import HttpProtocolStub, make_test_scope
 
 from proper_sentry import instrument
 
@@ -18,21 +17,18 @@ def add_routes(app):
     app.router.add_route(Route(method="GET", path="/explode", to=PagesController.explode))
 
 
-def test_rsgi(app, sentry_init):
+def test_bearings(app, sentry_init):
+    """The raw interface that `proper run` serves with Bearings."""
     recorder = sentry_init(traces_sample_rate=1.0)
     instrument(app)
     add_routes(app)
-    protocol = HttpProtocolStub()
+    # The head as Bearings sends it: method, path, query, version, client
+    # address and port, then the headers, each field ended by NUL
+    fields = ["GET", "/explode", "", "HTTP/1.1", "10.0.0.9", "5555", "Host", "example.com"]
+    head = "".join(field + "\0" for field in fields)
 
-    async def run():
-        await app.startup()
-        try:
-            await app.__rsgi__(make_test_scope("/explode"), protocol)
-        finally:
-            await app.shutdown()
-
-    asyncio.run(run())
-    assert protocol.status == 500
+    status, _, _ = app._bearings(head, io.BytesIO(), Listener("example.com", 80, "http"))
+    assert status == 500
     (event,) = recorder.events
     assert event["transaction"] == "tests.test_servers.PagesController.explode"
     assert event["request"]["url"] == "http://example.com/explode"

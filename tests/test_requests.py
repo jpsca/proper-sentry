@@ -1,7 +1,7 @@
 import peewee as pw
 import pytest
 import sentry_sdk
-from proper import TestClient, current, status
+from proper import current, status
 from proper.controller import Controller
 from proper.errors import NotFound
 from proper.router import Route
@@ -73,9 +73,9 @@ def add_routes(app):
 
 
 @pytest.fixture()
-def client(app):
+def client(app, make_client):
     add_routes(app)
-    return TestClient(app)
+    return make_client(app)
 
 
 # ---- instrument ----
@@ -304,6 +304,14 @@ def test_traces_each_request(app, client, sentry_init):
     assert transaction["contexts"]["trace"]["op"] == "http.server"
     assert transaction["contexts"]["trace"]["origin"] == "auto.http.proper"
     assert transaction["contexts"]["trace"]["status"] == "ok"
+
+
+def test_tags_the_request_id(app, client, sentry_init):
+    recorder = sentry_init(traces_sample_rate=1.0)
+    instrument(app)
+    client.get("/", headers={"X-Request-ID": "abc-123"})
+    (transaction,) = recorder.transactions
+    assert transaction["tags"]["request_id"] == "abc-123"
 
 
 def test_names_transactions_after_the_route_path(app, client, sentry_init):

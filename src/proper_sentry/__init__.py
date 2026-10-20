@@ -9,7 +9,8 @@ instrument(app)
 
 `instrument` reports to Sentry the errors of every request, with the data of
 the request, and traces each one as an `http.server` transaction with spans
-for its SQL queries. The tasks of the queue (Huey) are reported by Sentry's
+for its SQL queries. Both have the `request_id` tag, the ID of the request in
+the app's logs. The tasks of the queue (Huey) are reported by Sentry's
 own Huey integration, which turns on by itself.
 """
 import functools
@@ -133,6 +134,10 @@ def _around_request(
             scope.clear_breadcrumbs()
             scope._name = "proper"
             scope.add_event_processor(_make_event_processor(request))
+            # The ID of the request in the app's logs and in the response's
+            # `X-Request-ID` header
+            if request.request_id:
+                scope.set_tag("request_id", request.request_id)
 
         transaction = sentry_sdk.continue_trace(
             dict(request.headers),

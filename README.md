@@ -36,6 +36,7 @@ If you'd rather start Sentry yourself, call `sentry_sdk.init(...)` and then `ins
 
 - **Errors**: every request that ends in a server error (5xx), with the request's method, URL, headers and form fields. Errors that become a 4xx page (not found, forbidden, invalid CSRF token...) aren't reported.
 - **Performance**: each request is a transaction, named after its controller action (`myapp.controllers.posts.PostsController.show`), with a span for every SQL query. Traces from other services continue through the `sentry-trace` and `baggage` headers.
+- **The request ID**: errors and transactions have a `request_id` tag, the ID of the request in the app's logs and in the response's `X-Request-ID` header, so you can go from a report to the log lines of its request.
 - **Background tasks**: Sentry's own Huey integration reports the tasks of the queue. It turns on by itself.
 
 With `"send_default_pii": True` in `SENTRY`, the reports also include the cookies, the IP address, and the `id`, `email` and `login` of `current.user`.

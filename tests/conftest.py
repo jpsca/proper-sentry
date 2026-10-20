@@ -1,6 +1,8 @@
+import inspect
+
 import pytest
 import sentry_sdk
-from proper import App, current
+from proper import App, TestClient, current
 from sentry_sdk.transport import Transport
 
 
@@ -73,3 +75,17 @@ def app():
     app = App(__name__, {"SECRET_KEYS": ["*" * 50], "DEBUG": False})
     current.app = app
     return app
+
+
+@pytest.fixture(scope="session")
+def make_client():
+    """A test client that answers a server error with the 500 page, as a
+    server does, instead of raising it. Proper 0.43 has no
+    `raise_server_errors` and always does that."""
+
+    def make(app):
+        if "raise_server_errors" in inspect.signature(TestClient).parameters:
+            return TestClient(app, raise_server_errors=False)
+        return TestClient(app)
+
+    return make
